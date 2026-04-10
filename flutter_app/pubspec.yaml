@@ -1,0 +1,52 @@
+name: inventario_municipal
+description: Sistema de Gestión de Inventario y Activos Fijos - Alcaldía Municipal
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP y networking
+  http: ^1.2.0
+  dio: ^5.4.0
+
+  # Manejo de estado
+  provider: ^6.1.1
+
+  # Almacenamiento local (guardar token Sanctum)
+  shared_preferences: ^2.2.2
+
+  # UI y diseño
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  fl_chart: ^0.67.0
+
+  # Utilidades
+  intl: ^0.19.0
+  image_picker: ^1.0.7
+  fluttertoast: ^8.2.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700

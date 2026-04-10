@@ -17,7 +17,8 @@ class InventoryController extends Controller
     {
         $request->validate([
             'category_id' => 'nullable|exists:categories,id',
-            'is_asset' => 'nullable|boolean',
+            'is_asset'    => 'nullable|boolean',
+            'low_stock'   => 'nullable|boolean',
         ]);
 
         $query = Item::with('category');
@@ -30,9 +31,24 @@ class InventoryController extends Controller
             $query->where('is_asset', $request->boolean('is_asset'));
         }
 
-        $items = $query->get();
+        // Filtrar solo items con stock bajo
+        if ($request->boolean('low_stock')) {
+            $query->where('is_asset', false)->whereColumn('stock', '<=', 'min_stock');
+        }
 
-        return response()->json(['data' => $items]);
+        // Consumibles: ordenar primero los de stock más bajo
+        $items = $query->orderByRaw('CASE WHEN is_asset = 0 AND stock <= min_stock THEN 0 ELSE 1 END')
+                       ->orderBy('name')
+                       ->get();
+
+        $lowStockCount = $items->where('is_asset', false)
+                               ->filter(fn($i) => $i->stock <= $i->min_stock)
+                               ->count();
+
+        return response()->json([
+            'data'           => $items,
+            'low_stock_count'=> $lowStockCount,
+        ]);
     }
 
     /**

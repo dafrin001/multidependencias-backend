@@ -14,11 +14,22 @@ class Item extends Model
         'category_id',
         'name',
         'is_asset',
+        'stock',
+        'min_stock',
     ];
 
     protected $casts = [
-        'is_asset' => 'boolean',
+        'is_asset'  => 'boolean',
+        'stock'     => 'integer',
+        'min_stock' => 'integer',
     ];
+
+    public function getIsLowStockAttribute(): bool
+    {
+        return !$this->is_asset && $this->stock <= $this->min_stock;
+    }
+
+    protected $appends = ['is_low_stock'];
 
     public function category()
     {
@@ -28,5 +39,10 @@ class Item extends Model
     public function fixedAssets()
     {
         return $this->hasMany(FixedAsset::class);
+    }
+
+    public function deliveries()
+    {
+        return $this->hasMany(DeliveryRecord::class);
     }
 }

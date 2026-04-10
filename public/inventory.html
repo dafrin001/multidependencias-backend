@@ -468,6 +468,50 @@
             font-family: monospace;
             font-size: 0.82rem;
         }
+
+        /* Stock alert row */
+        .low-stock-row { background: rgba(239,68,68,0.05) !important; }
+        .stock-bar-wrap { width: 80px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; display:inline-block; vertical-align:middle; }
+        .stock-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
+        .stock-ok { background: var(--success); }
+        .stock-warn { background: var(--warning); }
+        .stock-crit { background: var(--danger); }
+
+        /* Alert banner */
+        .alert-banner {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border { 0%,100%{border-color:rgba(239,68,68,0.25)} 50%{border-color:rgba(239,68,68,0.6)} }
+        .alert-banner .alert-icon { font-size: 22px; flex-shrink:0; }
+        .alert-banner .alert-text strong { display:block; color:#fca5a5; font-size:0.9rem; }
+        .alert-banner .alert-text span { color:var(--text-secondary); font-size:0.8rem; }
+
+        /* Signature canvas */
+        .signature-wrap {
+            border: 1px dashed rgba(255,255,255,0.2);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            overflow: hidden;
+            position: relative;
+        }
+        #sig-canvas { display:block; cursor:crosshair; touch-action:none; }
+        .sig-clear { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.5); border:none; color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; cursor:pointer; }
+
+        /* Acta print styles */
+        @media print {
+            .sidebar, .topbar, .controls-row, .modal-overlay, #toast-container, .no-print { display:none !important; }
+            .main-content { margin-left:0; }
+            body { background: white; color: black; }
+            .acta-print { padding: 40px; font-family: 'Inter', sans-serif; }
+        }
+        .badge-returned { background:rgba(100,116,139,0.15); color:#94a3b8; }
+        .badge-active-delivery { background:rgba(16,185,129,0.12); color:#34d399; }
     </style>
 </head>
 <body>
@@ -518,6 +562,21 @@
         <div class="nav-item" onclick="showPage('offices',this)" id="nav-offices">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
             Secretarías
+        </div>
+
+        <div class="nav-section-label" style="margin-top:12px;">Trazabilidad</div>
+        <div class="nav-item" onclick="showPage('officials',this)" id="nav-officials">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Funcionarios
+        </div>
+        <div class="nav-item" onclick="showPage('deliveries',this)" id="nav-deliveries">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Actas de Entrega
+        </div>
+        <div class="nav-item" onclick="showPage('alerts',this)" id="nav-alerts">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Alertas de Stock
+            <span class="nav-badge" id="badge-alerts" style="background:#ef4444;display:none">0</span>
         </div>
     </nav>
 
@@ -734,6 +793,77 @@
             </div>
         </section>
 
+        <!-- =========================================
+             OFFICIALS PAGE
+        ========================================= -->
+        <section class="page" id="page-officials">
+            <div class="controls-row">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar por nombre, cédula o cargo..." oninput="filterOfficials(this.value)">
+                </div>
+                <button class="btn btn-primary" onclick="openOfficialModal()">+ Nuevo Funcionario</button>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Documento</th><th>Nombre Completo</th><th>Cargo</th><th>Secretaría</th><th>Contacto</th><th>Entregas</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody id="officials-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="loader-wrap" id="officials-loader"><div class="spinner"></div></div>
+                <div class="empty-state" id="officials-empty" style="display:none"><div class="empty-state-icon">👤</div><p>No hay funcionarios registrados</p></div>
+            </div>
+        </section>
+
+        <!-- =========================================
+             DELIVERIES PAGE
+        ========================================= -->
+        <section class="page" id="page-deliveries">
+            <div id="deliveries-alert-banner"></div>
+            <div class="controls-row">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar por acta, funcionario o activo..." oninput="filterDeliveries(this.value)">
+                </div>
+                <select class="form-select" style="width:auto;padding:10px 14px" onchange="filterDeliveriesByStatus(this.value)">
+                    <option value="">Todas las actas</option>
+                    <option value="active">Vigentes</option>
+                    <option value="returned">Devueltas</option>
+                </select>
+                <button class="btn btn-primary" onclick="openDeliveryModal()">+ Nueva Acta de Entrega</button>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>N° Acta</th><th>Tipo</th><th>Ítem Entregado</th><th>Funcionario Receptor</th><th>Secretaría</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody id="deliveries-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="loader-wrap" id="deliveries-loader"><div class="spinner"></div></div>
+                <div class="empty-state" id="deliveries-empty" style="display:none"><div class="empty-state-icon">📋</div><p>No hay actas de entrega registradas</p></div>
+            </div>
+        </section>
+
+        <!-- =========================================
+             ALERTS PAGE
+        ========================================= -->
+        <section class="page" id="page-alerts">
+            <div class="card" style="margin-bottom:20px">
+                <div class="card-header"><h3>🚨 Suministros con Stock Bajo o Agotado</h3><button class="btn btn-secondary btn-sm" onclick="loadAlerts()">↻ Actualizar</button></div>
+                <div class="card-body" style="padding:0">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Artículo</th><th>Categoría</th><th>Stock Actual</th><th>Stock Mínimo</th><th>Nivel</th><th>Estado</th></tr></thead>
+                            <tbody id="alerts-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="loader-wrap" id="alerts-loader"><div class="spinner"></div></div>
+                    <div class="empty-state" id="alerts-empty" style="display:none"><div class="empty-state-icon">✅</div><p>¡Todo en orden! No hay suministros en nivel crítico.</p></div>
+                </div>
+            </div>
+        </section>
+
     </main>
 </div>
 
@@ -856,25 +986,164 @@
 <!-- Toast container -->
 <div id="toast-container"></div>
 
+<!-- Official Modal -->
+<div class="modal-overlay" id="official-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="official-modal-title">Nuevo Funcionario</h3>
+            <button class="modal-close" onclick="closeModal('official-modal')">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="official-id">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tipo de Doc.</label>
+                    <select id="official-doctype" class="form-select">
+                        <option value="CC">Cédula de Ciudadanía</option>
+                        <option value="TI">Tarjeta de Identidad</option>
+                        <option value="CE">Cédula Extranjería</option>
+                        <option value="PS">Pasaporte</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Número de Documento *</label>
+                    <input type="text" id="official-doc" class="form-control" placeholder="12345678">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="official-name" class="form-control" placeholder="Nombre y apellidos">
+            </div>
+            <div class="form-group">
+                <label>Cargo *</label>
+                <input type="text" id="official-position" class="form-control" placeholder="Ej: Secretario de Hacienda">
+            </div>
+            <div class="form-group">
+                <label>Secretaría / Dependencia *</label>
+                <select id="official-office" class="form-select"><option value="">Seleccionar...</option></select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="official-email" class="form-control" placeholder="nombre@alcaldia.gov">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" id="official-phone" class="form-control" placeholder="3100000000">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('official-modal')">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveOfficial()">Guardar Funcionario</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delivery Modal -->
+<div class="modal-overlay" id="delivery-modal">
+    <div class="modal" style="max-width:580px">
+        <div class="modal-header">
+            <h3>Nueva Acta de Entrega</h3>
+            <button class="modal-close" onclick="closeModal('delivery-modal')">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Tipo de Entrega *</label>
+                <select id="delivery-type" class="form-select" onchange="toggleDeliveryType(this.value)">
+                    <option value="asset">Activo Fijo (Equipo)</option>
+                    <option value="consumable">Consumible (Suministro)</option>
+                </select>
+            </div>
+            <div id="delivery-asset-wrap" class="form-group">
+                <label>Activo Fijo *</label>
+                <select id="delivery-asset" class="form-select"><option value="">Seleccionar activo...</option></select>
+            </div>
+            <div id="delivery-consumable-wrap" style="display:none">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Consumible / Suministro *</label>
+                        <select id="delivery-item" class="form-select"><option value="">Seleccionar artículo...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad *</label>
+                        <input type="number" id="delivery-qty" class="form-control" value="1" min="1">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Funcionario Receptor *</label>
+                <select id="delivery-official" class="form-select"><option value="">Seleccionar funcionario...</option></select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Entregado Por *</label>
+                    <input type="text" id="delivery-by" class="form-control" placeholder="Nombre de quien entrega">
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Entrega *</label>
+                    <input type="date" id="delivery-date" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Observaciones</label>
+                <textarea id="delivery-notes" class="form-control" rows="2" placeholder="Estado del bien, condiciones, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Firma Digital del Receptor</label>
+                <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:6px">Dibuje la firma en el recuadro con el mouse o con el dedo:</p>
+                <div class="signature-wrap">
+                    <canvas id="sig-canvas" width="520" height="120"></canvas>
+                    <button class="sig-clear" onclick="clearSignature()">Limpiar</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('delivery-modal')">Cancelar</button>
+            <button class="btn btn-primary" id="delivery-save-btn" onclick="saveDelivery()">📋 Registrar Acta</button>
+        </div>
+    </div>
+</div>
+
+<!-- Acta Print Modal -->
+<div class="modal-overlay" id="acta-print-modal">
+    <div class="modal" style="max-width:700px;background:#fff;color:#111">
+        <div class="modal-header" style="border-color:#e2e8f0">
+            <h3 style="color:#111">Acta de Entrega</h3>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-primary btn-sm no-print" onclick="window.print()">🖨️ Imprimir</button>
+                <button class="modal-close no-print" onclick="closeModal('acta-print-modal')" style="color:#888">×</button>
+            </div>
+        </div>
+        <div class="modal-body acta-print" id="acta-print-body" style="color:#111"></div>
+    </div>
+</div>
+
 <!-- =========================================
      JAVASCRIPT
 ========================================= -->
 <script>
 const API = '/api';
 let allAssets = [], allItems = [], allProviders = [], allAssignments = [], allOffices = [], allCategories = [];
+let allOfficials = [], allDeliveries = [], allDeliveriesRaw = [];
 let chartStatus = null, chartCategory = null;
+// Signature canvas
+let sigCanvas, sigCtx, sigDrawing = false;
 
 /* ============================================================
    PAGE NAVIGATION
 ============================================================ */
 const pageTitles = {
-    dashboard: ['Dashboard', 'Resumen general del sistema'],
-    assets: ['Activos Fijos', 'Gestión completa del inventario de activos'],
-    items: ['Catálogo de Artículos', 'Todos los artículos del sistema'],
+    dashboard:  ['Dashboard', 'Resumen general del sistema'],
+    assets:     ['Activos Fijos', 'Gestión completa del inventario de activos'],
+    items:      ['Catálogo de Artículos', 'Todos los artículos del sistema'],
     categories: ['Categorías', 'Clasificación de artículos'],
-    providers: ['Proveedores', 'Gestión de proveedores y fabricantes'],
-    assignments: ['Asignaciones', 'Trazabilidad de custodios y secretarías'],
-    offices: ['Secretarías', 'Dependencias de la alcaldía'],
+    providers:  ['Proveedores', 'Gestión de proveedores y fabricantes'],
+    assignments:['Asignaciones', 'Trazabilidad de custodios y secretarías'],
+    offices:    ['Secretarías', 'Dependencias de la alcaldía'],
+    officials:  ['Funcionarios', 'Registro de funcionarios y custodios'],
+    deliveries: ['Actas de Entrega', 'Trazabilidad completa de entregas de bienes'],
+    alerts:     ['Alertas de Stock', 'Suministros con inventario bajo mínimo'],
 };
 function showPage(name, el) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -895,13 +1164,16 @@ function refreshCurrentPage() {
 }
 
 async function loadPage(name) {
-    if(name === 'dashboard') await loadDashboard();
-    if(name === 'assets') await loadAssets();
-    if(name === 'items') await loadItems();
+    if(name === 'dashboard')  await loadDashboard();
+    if(name === 'assets')     await loadAssets();
+    if(name === 'items')      await loadItems();
     if(name === 'categories') await loadCategories();
-    if(name === 'providers') await loadProviders();
-    if(name === 'assignments') await loadAssignments();
-    if(name === 'offices') await loadOffices();
+    if(name === 'providers')  await loadProviders();
+    if(name === 'assignments')await loadAssignments();
+    if(name === 'offices')    await loadOffices();
+    if(name === 'officials')  await loadOfficials();
+    if(name === 'deliveries') await loadDeliveries();
+    if(name === 'alerts')     await loadAlerts();
 }
 
 /* ============================================================
@@ -1343,12 +1615,344 @@ function showToast(msg, type='info') {
 }
 
 /* ============================================================
+   OFFICIALS
+============================================================ */
+async function loadOfficials() {
+    showLoader('officials');
+    try {
+        if(!allOffices.length) await loadOfficesData();
+        const res = await apiFetch('/officials');
+        allOfficials = res.data || [];
+        renderOfficialsTable(allOfficials);
+    } catch(e){ console.error(e); } finally { hideLoader('officials'); }
+}
+function renderOfficialsTable(list) {
+    const tbody = document.getElementById('officials-table-body');
+    if(!list.length){ tbody.innerHTML=''; document.getElementById('officials-empty').style.display=''; return; }
+    document.getElementById('officials-empty').style.display='none';
+    tbody.innerHTML = list.map(o => `
+        <tr>
+            <td><span class="code-pill">${o.document_type} ${o.document_number}</span></td>
+            <td><strong>${o.full_name}</strong></td>
+            <td><small>${o.position}</small></td>
+            <td><small>${o.office?.name || '—'}</small></td>
+            <td><small>${o.email || '—'}<br>${o.phone || ''}</small></td>
+            <td><span class="badge badge-bueno">${o.active_deliveries_count ?? 0} activa(s)</span></td>
+            <td>${o.is_active ? '<span class="badge badge-nuevo">Activo</span>' : '<span class="badge badge-baja">Inactivo</span>'}</td>
+            <td><div class="action-group">
+                <button class="btn btn-secondary btn-sm" onclick='editOfficial(${JSON.stringify(o)})'>✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteOfficial(${o.id})">🗑️</button>
+            </div></td>
+        </tr>
+    `).join('');
+}
+function filterOfficials(term) {
+    const t = term.toLowerCase();
+    renderOfficialsTable(allOfficials.filter(o =>
+        o.full_name.toLowerCase().includes(t) ||
+        o.document_number.toLowerCase().includes(t) ||
+        o.position.toLowerCase().includes(t)
+    ));
+}
+async function openOfficialModal() {
+    document.getElementById('official-modal-title').textContent = 'Nuevo Funcionario';
+    document.getElementById('official-id').value = '';
+    ['official-doc','official-name','official-position','official-email','official-phone'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('official-doctype').value = 'CC';
+    if(!allOffices.length) await loadOfficesData();
+    document.getElementById('official-office').innerHTML = '<option value="">Seleccionar...</option>' +
+        allOffices.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+    openModal('official-modal');
+}
+function editOfficial(o) {
+    document.getElementById('official-modal-title').textContent = 'Editar Funcionario';
+    document.getElementById('official-id').value = o.id;
+    document.getElementById('official-doctype').value = o.document_type;
+    document.getElementById('official-doc').value = o.document_number;
+    document.getElementById('official-name').value = o.full_name;
+    document.getElementById('official-position').value = o.position;
+    document.getElementById('official-email').value = o.email || '';
+    document.getElementById('official-phone').value = o.phone || '';
+    if(!allOffices.length) loadOfficesData().then(() => {
+        document.getElementById('official-office').innerHTML = '<option value="">Seleccionar...</option>' +
+            allOffices.map(off => `<option value="${off.id}" ${off.id==o.office_id?'selected':''}>${off.name}</option>`).join('');
+    });
+    else {
+        document.getElementById('official-office').innerHTML = '<option value="">Seleccionar...</option>' +
+            allOffices.map(off => `<option value="${off.id}" ${off.id==o.office_id?'selected':''}>${off.name}</option>`).join('');
+    }
+    openModal('official-modal');
+}
+async function saveOfficial() {
+    const id = document.getElementById('official-id').value;
+    const payload = {
+        document_type:   document.getElementById('official-doctype').value,
+        document_number: document.getElementById('official-doc').value,
+        full_name:       document.getElementById('official-name').value,
+        position:        document.getElementById('official-position').value,
+        office_id:       document.getElementById('official-office').value,
+        email:           document.getElementById('official-email').value || null,
+        phone:           document.getElementById('official-phone').value || null,
+    };
+    if(!payload.document_number||!payload.full_name||!payload.position||!payload.office_id){
+        showToast('Completa todos los campos obligatorios','error'); return;
+    }
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/officials/${id}` : '/officials';
+    const res = await apiFetch(url, {method, body: JSON.stringify(payload)});
+    if(res.data){ closeModal('official-modal'); showToast(id?'Funcionario actualizado':'Funcionario registrado','success'); loadOfficials(); }
+    else showToast(res.message||'Error al guardar','error');
+}
+async function deleteOfficial(id){
+    if(!confirm('¿Eliminar este funcionario?')) return;
+    await apiFetch(`/officials/${id}`,{method:'DELETE'});
+    showToast('Funcionario eliminado','info'); loadOfficials();
+}
+
+/* ============================================================
+   DELIVERIES
+============================================================ */
+async function loadDeliveries() {
+    showLoader('deliveries');
+    try {
+        const res = await apiFetch('/deliveries');
+        allDeliveriesRaw = res.data || [];
+        allDeliveries = [...allDeliveriesRaw];
+        // Check low stock for banner
+        const alertRes = await apiFetch('/alerts/low-stock');
+        const alertCount = alertRes.count || 0;
+        const banner = document.getElementById('deliveries-alert-banner');
+        if(alertCount > 0){
+            banner.innerHTML = `<div class="alert-banner"><span class="alert-icon">⚠️</span><div class="alert-text"><strong>${alertCount} suministro(s) con stock bajo</strong><span>Revisa la sección "Alertas de Stock" para reponer inventario</span></div></div>`;
+        } else { banner.innerHTML=''; }
+        renderDeliveriesTable(allDeliveries);
+    } catch(e){ console.error(e); } finally { hideLoader('deliveries'); }
+}
+function renderDeliveriesTable(list) {
+    const tbody = document.getElementById('deliveries-table-body');
+    if(!list.length){ tbody.innerHTML=''; document.getElementById('deliveries-empty').style.display=''; return; }
+    document.getElementById('deliveries-empty').style.display='none';
+    tbody.innerHTML = list.map(d => {
+        const item = d.type==='asset' ? (d.fixed_asset?.item?.name||'—') : (d.item?.name||'—');
+        const code = d.type==='asset' ? (d.fixed_asset?.inventory_code||'') : (d.quantity+' unid.');
+        const statusBadge = d.is_returned ?
+            '<span class="badge badge-returned">Devuelto</span>' :
+            '<span class="badge badge-active-delivery">Vigente</span>';
+        return `
+        <tr>
+            <td><span class="code-pill">${d.acta_number}</span></td>
+            <td><span class="badge ${d.type==='asset'?'badge-asset':'badge-consumable'}">${d.type==='asset'?'Activo':'Consumible'}</span></td>
+            <td><strong>${item}</strong><br><small style="color:var(--text-muted)">${code}</small></td>
+            <td><strong>${d.official?.full_name||'—'}</strong><br><small>${d.official?.position||''}</small></td>
+            <td><small>${d.official?.office?.name||'—'}</small></td>
+            <td><small>${d.delivery_date}</small></td>
+            <td>${statusBadge}</td>
+            <td><div class="action-group">
+                <button class="btn btn-secondary btn-sm" title="Ver e imprimir acta" onclick="printActa(${d.id})">🖨️</button>
+                ${!d.is_returned ? `<button class="btn btn-success btn-sm" title="Registrar devolución" onclick="registerReturn(${d.id})">↩️</button>` : ''}
+            </div></td>
+        </tr>`;
+    }).join('');
+}
+function filterDeliveries(term) {
+    const t = term.toLowerCase();
+    const filtered = allDeliveriesRaw.filter(d =>
+        (d.acta_number||'').toLowerCase().includes(t) ||
+        (d.official?.full_name||'').toLowerCase().includes(t) ||
+        (d.fixed_asset?.inventory_code||'').toLowerCase().includes(t) ||
+        (d.item?.name||'').toLowerCase().includes(t)
+    );
+    allDeliveries = filtered;
+    renderDeliveriesTable(filtered);
+}
+function filterDeliveriesByStatus(val) {
+    let f = allDeliveriesRaw;
+    if(val==='active')   f = f.filter(d => !d.is_returned);
+    if(val==='returned') f = f.filter(d => d.is_returned);
+    allDeliveries = f;
+    renderDeliveriesTable(f);
+}
+
+// Signature canvas setup
+function initSignatureCanvas() {
+    sigCanvas = document.getElementById('sig-canvas');
+    if(!sigCanvas) return;
+    sigCtx = sigCanvas.getContext('2d');
+    sigCtx.strokeStyle = '#1e293b';
+    sigCtx.lineWidth = 2;
+    sigCtx.lineCap = 'round';
+    // Mouse
+    sigCanvas.addEventListener('mousedown', e => { sigDrawing=true; sigCtx.beginPath(); sigCtx.moveTo(...getXY(e,sigCanvas)); });
+    sigCanvas.addEventListener('mousemove', e => { if(!sigDrawing)return; sigCtx.lineTo(...getXY(e,sigCanvas)); sigCtx.stroke(); });
+    sigCanvas.addEventListener('mouseup', () => sigDrawing=false);
+    sigCanvas.addEventListener('mouseleave', () => sigDrawing=false);
+    // Touch
+    sigCanvas.addEventListener('touchstart', e => { e.preventDefault(); sigDrawing=true; sigCtx.beginPath(); sigCtx.moveTo(...getXY(e.touches[0],sigCanvas)); });
+    sigCanvas.addEventListener('touchmove', e => { e.preventDefault(); if(!sigDrawing)return; sigCtx.lineTo(...getXY(e.touches[0],sigCanvas)); sigCtx.stroke(); });
+    sigCanvas.addEventListener('touchend', () => sigDrawing=false);
+}
+function getXY(e, canvas) {
+    const r = canvas.getBoundingClientRect();
+    return [e.clientX - r.left, e.clientY - r.top];
+}
+function clearSignature() {
+    if(sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+}
+function getSignatureData() {
+    if(!sigCanvas) return null;
+    // Check if canvas has any drawing
+    const data = sigCtx.getImageData(0,0,sigCanvas.width,sigCanvas.height).data;
+    const hasContent = Array.from(data).some(v => v !== 0);
+    return hasContent ? sigCanvas.toDataURL('image/png') : null;
+}
+
+async function openDeliveryModal() {
+    if(!allAssets.length) { const r = await apiFetch('/fixed-assets'); allAssets = r.data || []; }
+    if(!allOfficials.length) { const r = await apiFetch('/officials'); allOfficials = r.data || []; }
+    const consumables = (await apiFetch('/inventory')).data?.filter(i => !i.is_asset) || [];
+
+    document.getElementById('delivery-asset').innerHTML = '<option value="">Seleccionar activo...</option>' +
+        allAssets.map(a => `<option value="${a.id}">${a.inventory_code} – ${a.item?.name||''}</option>`).join('');
+    document.getElementById('delivery-item').innerHTML = '<option value="">Seleccionar artículo...</option>' +
+        consumables.map(i => `<option value="${i.id}">${i.name} (Stock: ${i.stock})</option>`).join('');
+    document.getElementById('delivery-official').innerHTML = '<option value="">Seleccionar funcionario...</option>' +
+        allOfficials.map(o => `<option value="${o.id}">${o.full_name} – ${o.position}</option>`).join('');
+    document.getElementById('delivery-type').value = 'asset';
+    document.getElementById('delivery-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('delivery-notes').value = '';
+    document.getElementById('delivery-by').value = '';
+    toggleDeliveryType('asset');
+    openModal('delivery-modal');
+    setTimeout(initSignatureCanvas, 100);
+}
+function toggleDeliveryType(type) {
+    document.getElementById('delivery-asset-wrap').style.display = type==='asset' ? '' : 'none';
+    document.getElementById('delivery-consumable-wrap').style.display = type==='consumable' ? '' : 'none';
+}
+async function saveDelivery() {
+    const type = document.getElementById('delivery-type').value;
+    const payload = {
+        type,
+        official_id:    document.getElementById('delivery-official').value,
+        delivered_by:   document.getElementById('delivery-by').value,
+        delivery_date:  document.getElementById('delivery-date').value,
+        notes:          document.getElementById('delivery-notes').value || null,
+        signature_data: getSignatureData(),
+    };
+    if(type==='asset') payload.fixed_asset_id = document.getElementById('delivery-asset').value;
+    else { payload.item_id = document.getElementById('delivery-item').value; payload.quantity = parseInt(document.getElementById('delivery-qty').value)||1; }
+    if(!payload.official_id||!payload.delivered_by||!payload.delivery_date||(type==='asset'&&!payload.fixed_asset_id)||(type==='consumable'&&!payload.item_id)){
+        showToast('Completa todos los campos obligatorios','error'); return;
+    }
+    const btn = document.getElementById('delivery-save-btn'); btn.textContent='Guardando...'; btn.disabled=true;
+    try {
+        const res = await apiFetch('/deliveries', {method:'POST', body:JSON.stringify(payload)});
+        if(res.data){ closeModal('delivery-modal'); showToast('Acta registrada exitosamente','success'); loadDeliveries(); }
+        else showToast(res.message||'Error al guardar','error');
+    } catch(e){ showToast('Error de red','error'); }
+    finally { btn.textContent='📋 Registrar Acta'; btn.disabled=false; }
+}
+async function registerReturn(id) {
+    const date = prompt('Fecha de devolución (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+    if(!date) return;
+    const notes = prompt('Observaciones de la devolución (opcional):') || '';
+    const res = await apiFetch(`/deliveries/${id}/return`, {method:'PATCH', body: JSON.stringify({returned_date:date, return_notes:notes})});
+    if(res.data||res.message?.includes('Devolución')){ showToast('Devolución registrada','success'); loadDeliveries(); }
+    else showToast(res.message||'Error','error');
+}
+async function printActa(id) {
+    try {
+        const res = await apiFetch(`/deliveries/${id}`);
+        const d = res.data;
+        const item = d.type==='asset' ? `${d.fixed_asset?.item?.name||'N/A'} (${d.fixed_asset?.inventory_code||''})` : `${d.item?.name||'N/A'} × ${d.quantity} unidad(es)`;
+        document.getElementById('acta-print-body').innerHTML = `
+            <div style="text-align:center;margin-bottom:24px">
+                <h2 style="font-size:1.2rem;font-weight:800;color:#111">🏛️ ALCALDÍA MUNICIPAL</h2>
+                <h3 style="font-size:1rem;color:#374151">ACTA DE ENTREGA DE BIENES</h3>
+                <p style="font-size:0.85rem;color:#6b7280">N° ${d.acta_number}</p>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:20px">
+                <tr style="background:#f3f4f6">
+                    <td style="padding:8px 12px;font-weight:600;width:40%">Tipo de entrega:</td>
+                    <td style="padding:8px 12px">${d.type==='asset'?'Activo Fijo':'Consumible/Suministro'}</td>
+                </tr>
+                <tr><td style="padding:8px 12px;font-weight:600">Bien entregado:</td><td style="padding:8px 12px">${item}</td></tr>
+                <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Funcionario receptor:</td><td style="padding:8px 12px">${d.official?.full_name||'—'}<br><small>${d.official?.position||''} – ${d.official?.office?.name||''}</small></td></tr>
+                <tr><td style="padding:8px 12px;font-weight:600">Cédula:</td><td style="padding:8px 12px">${d.official?.document_type} ${d.official?.document_number}</td></tr>
+                <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Entregado por:</td><td style="padding:8px 12px">${d.delivered_by}</td></tr>
+                <tr><td style="padding:8px 12px;font-weight:600">Fecha de entrega:</td><td style="padding:8px 12px">${d.delivery_date}</td></tr>
+                ${d.notes ? `<tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Observaciones:</td><td style="padding:8px 12px">${d.notes}</td></tr>` : ''}
+                ${d.is_returned ? `<tr><td style="padding:8px 12px;font-weight:600;color:#dc2626">Devuelto el:</td><td style="padding:8px 12px;color:#dc2626">${d.returned_date} – ${d.return_notes||''}</td></tr>` : ''}
+            </table>
+            <div style="margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+                <div style="text-align:center">
+                    <div style="border-top:1px solid #374151;padding-top:8px;font-size:0.8rem;color:#6b7280">Firma de quien entrega<br><strong>${d.delivered_by}</strong></div>
+                </div>
+                <div style="text-align:center">
+                    ${d.has_signature ? `<img src="" alt="Firma del receptor" style="max-width:180px;margin-bottom:4px" id="sig-img">` : '<div style="height:50px"></div>'}
+                    <div style="border-top:1px solid #374151;padding-top:8px;font-size:0.8rem;color:#6b7280">Firma del receptor<br><strong>${d.official?.full_name||'—'}</strong></div>
+                </div>
+            </div>
+            <p style="margin-top:30px;font-size:0.73rem;color:#9ca3af;text-align:center">Documento generado el ${new Date().toLocaleDateString('es-CO')} por el Sistema de Gestión de Inventario y Activos Fijos</p>
+        `;
+        // Load signature if exists
+        if(d.has_signature) {
+            const sigRes = await apiFetch(`/deliveries/${id}`);
+            const sigData = sigRes.data?.signature_data;
+            if(sigData) { const img = document.getElementById('sig-img'); if(img) img.src = sigData; }
+        }
+        openModal('acta-print-modal');
+    } catch(e){ showToast('Error al cargar el acta','error'); }
+}
+
+/* ============================================================
+   ALERTS
+============================================================ */
+async function loadAlerts() {
+    showLoader('alerts');
+    try {
+        const res = await apiFetch('/alerts/low-stock');
+        const items = res.data || [];
+        const badge = document.getElementById('badge-alerts');
+        if(items.length > 0) { badge.textContent = items.length; badge.style.display=''; }
+        else { badge.style.display='none'; }
+        const tbody = document.getElementById('alerts-table-body');
+        if(!items.length){ tbody.innerHTML=''; document.getElementById('alerts-empty').style.display=''; return; }
+        document.getElementById('alerts-empty').style.display='none';
+        tbody.innerHTML = items.map(i => {
+            const pct = Math.min(100, Math.round((i.stock / (i.min_stock||1)) * 100));
+            const cls = i.stock === 0 ? 'stock-crit' : (i.stock < i.min_stock ? 'stock-warn' : 'stock-ok');
+            const label = i.stock === 0 ? '<span class="badge badge-malo">Agotado</span>' :
+                          (i.stock < i.min_stock ? '<span class="badge badge-regular">Stock Bajo</span>' :
+                          '<span class="badge badge-nuevo">Normal</span>');
+            return `<tr class="${i.stock<=0?'low-stock-row':''}">
+                <td><strong>${i.name}</strong></td>
+                <td><small>${i.category?.name||'—'}</small></td>
+                <td><strong style="font-size:1.1rem">${i.stock}</strong> unid.</td>
+                <td>${i.min_stock} unid.</td>
+                <td>
+                    <div class="stock-bar-wrap"><div class="stock-bar ${cls}" style="width:${pct}%"></div></div>
+                    <small style="margin-left:6px;color:var(--text-secondary)">${pct}%</small>
+                </td>
+                <td>${label}</td>
+            </tr>`;
+        }).join('');
+    } catch(e){ console.error(e); } finally { hideLoader('alerts'); }
+}
+
+/* ============================================================
    INIT
 ============================================================ */
 window.addEventListener('click', e => {
     if(e.target.classList.contains('modal-overlay')) {
         e.target.classList.remove('open');
     }
+});
+// Load alert count on start
+apiFetch('/alerts/low-stock').then(r => {
+    const c = r.count||0;
+    const b = document.getElementById('badge-alerts');
+    if(c>0){b.textContent=c;b.style.display='';} else{b.style.display='none';}
 });
 loadPage('dashboard');
 </script>

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,12 +16,16 @@ class DatabaseSeeder extends Seeder
         $this->call([
             OfficeSeeder::class,
             CategorySeeder::class,
+            FullInventorySeeder::class,
         ]);
-        
-        // Ensure default users exist if needed, otherwise ignore.
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+
+        // Usuario administrador por defecto
+        User::firstOrCreate(
+            ['email' => 'admin@alcaldia.gov'],
+            [
+                'name'     => 'Administrador Municipal',
+                'password' => Hash::make('password'),
+            ]
+        );
     }
 }

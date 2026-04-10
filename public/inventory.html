@@ -3,211 +3,779 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Inventario y Activos Fijos</title>
-    <!-- Google Fonts -->
+    <title>Sistema de Inventario y Activos Fijos - Alcaldía Municipal</title>
+    <meta name="description" content="Sistema de Gestión de Inventario y Activos Fijos para la Administración Municipal">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        /* =============================================
+           DESIGN TOKENS
+        ============================================= */
         :root {
             --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --danger: #ef4444;
-            --danger-hover: #dc2626;
-            --bg-body: #0f111a;
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
             --success: #10b981;
             --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --bg-body: #080c14;
+            --bg-sidebar: #0d1117;
+            --bg-card: rgba(22, 30, 50, 0.75);
+            --bg-card-hover: rgba(30, 41, 70, 0.85);
+            --bg-input: rgba(8, 12, 30, 0.6);
+            --border: rgba(255,255,255,0.07);
+            --border-active: rgba(99,102,241,0.5);
+            --text-primary: #f0f4ff;
+            --text-secondary: #8492a6;
+            --text-muted: #4a5568;
+            --sidebar-width: 260px;
+            --topbar-height: 64px;
+            --radius-card: 16px;
+            --radius-btn: 10px;
+            --shadow-card: 0 8px 32px rgba(0,0,0,0.4);
+            --shadow-glow: 0 0 30px rgba(99,102,241,0.15);
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg-body);
-            background-image: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
-                              radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.15), transparent 25%);
-            color: var(--text-main);
+            color: var(--text-primary);
             min-height: 100vh;
-            padding: 2rem;
+            display: flex;
+            background-image:
+                radial-gradient(ellipse at 10% 20%, rgba(99,102,241,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 80%, rgba(16,185,129,0.06) 0%, transparent 50%);
+        }
+
+        /* =============================================
+           SIDEBAR
+        ============================================= */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-logo {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
             align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 20px rgba(99,102,241,0.3);
+            flex-shrink: 0;
+        }
+        .logo-text { line-height: 1.3; }
+        .logo-text strong { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); display: block; }
+        .logo-text span { font-size: 0.72rem; color: var(--text-secondary); }
+
+        .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+        .nav-section-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 12px 10px 6px;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-bottom: 2px;
+            border: 1px solid transparent;
+            text-decoration: none;
+            user-select: none;
+        }
+        .nav-item:hover { background: rgba(99,102,241,0.08); color: var(--text-primary); }
+        .nav-item.active {
+            background: rgba(99,102,241,0.15);
+            color: var(--primary-light);
+            border-color: rgba(99,102,241,0.2);
+        }
+        .nav-item .nav-icon { width: 18px; height: 18px; opacity: 0.8; flex-shrink: 0; }
+        .nav-item.active .nav-icon { opacity: 1; }
+        .nav-badge {
+            margin-left: auto;
+            background: var(--primary);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 20px;
         }
 
-        .header { text-align: center; margin-bottom: 3rem; animation: fadeInDown 0.8s ease-out; }
-        .header h1 {
-            font-size: 2.5rem; font-weight: 700;
-            background: linear-gradient(135deg, #a5b4fc, #6366f1);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
         }
-        .header p { color: var(--text-muted); font-size: 1.1rem; }
-
-        .dashboard-container {
-            width: 100%; max-width: 1200px;
-            background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); animation: fadeInUp 0.8s ease-out;
+        .user-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
         }
-
-        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-        
-        .search-box { position: relative; flex-grow: 1; max-width: 400px; }
-        .search-box input {
-            width: 100%; padding: 0.8rem 1rem 0.8rem 2.5rem;
-            background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); border-radius: 10px;
-            color: var(--text-main); font-size: 1rem; outline: none; transition: all 0.3s ease;
+        .user-avatar {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: white;
+            flex-shrink: 0;
         }
-        .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
-        .search-box svg { position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; fill: var(--text-muted); }
+        .user-info strong { font-size: 0.8rem; display: block; color: var(--text-primary); }
+        .user-info span { font-size: 0.7rem; color: var(--text-secondary); }
 
-        .actions { display: flex; gap: 1rem; }
+        /* =============================================
+           MAIN LAYOUT
+        ============================================= */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .topbar {
+            height: var(--topbar-height);
+            background: rgba(13,17,23,0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 28px;
+            gap: 16px;
+            position: sticky; top: 0; z-index: 50;
+        }
+        .topbar-title { flex: 1; }
+        .topbar-title h2 { font-size: 1.1rem; font-weight: 600; }
+        .topbar-title span { font-size: 0.78rem; color: var(--text-secondary); }
+        .topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+        .page-body { padding: 28px; flex: 1; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+        /* =============================================
+           BUTTONS
+        ============================================= */
         .btn {
-            background: var(--primary); color: white; border: none; padding: 0.8rem 1.5rem;
-            border-radius: 10px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.3s ease;
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 9px 18px;
+            border-radius: var(--radius-btn);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
         }
-        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
-        .btn-danger { background: var(--danger); }
-        .btn-danger:hover { background: var(--danger-hover); }
-
-        .loader { display: flex; justify-content: center; padding: 4rem 0; }
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.1);
-            border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            color: white;
+            box-shadow: 0 4px 15px rgba(99,102,241,0.3);
         }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
+        .btn-secondary { background: rgba(255,255,255,0.06); color: var(--text-primary); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .btn-danger { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+        .btn-danger:hover { background: rgba(239,68,68,0.2); }
+        .btn-success { background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+        .btn-sm { padding: 6px 12px; font-size: 0.78rem; }
 
-        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; display: none; }
-
-        .asset-card {
-            background: rgba(15, 23, 42, 0.4); border: 1px solid var(--glass-border); border-radius: 15px;
-            padding: 1.5rem; transition: all 0.3s ease; position: relative; overflow: hidden;
+        /* =============================================
+           CARDS
+        ============================================= */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            backdrop-filter: blur(10px);
         }
-        .asset-card:hover {
-            transform: translateY(-5px); border-color: rgba(99, 102, 241, 0.4);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); background: rgba(15, 23, 42, 0.7);
+        .card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
         }
+        .card-header h3 { font-size: 0.95rem; font-weight: 600; }
+        .card-body { padding: 22px; }
 
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
-        .tag-status { font-size: 0.75rem; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .status-asset { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; }
+        /* =============================================
+           STATS GRID (Dashboard)
+        ============================================= */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow); border-color: var(--border-active); }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            opacity: 0.08;
+            transform: translate(20px, -20px);
+        }
+        .stat-card.purple::before { background: var(--primary); }
+        .stat-card.green::before { background: var(--success); }
+        .stat-card.orange::before { background: var(--warning); }
+        .stat-card.red::before { background: var(--danger); }
+        .stat-card.blue::before { background: var(--info); }
 
-        .card-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; line-height: 1.4; color: var(--primary); }
+        .stat-icon {
+            width: 42px; height: 42px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            margin-bottom: 14px;
+        }
+        .stat-card.purple .stat-icon { background: rgba(99,102,241,0.12); color: var(--primary-light); }
+        .stat-card.green .stat-icon { background: rgba(16,185,129,0.12); color: #34d399; }
+        .stat-card.orange .stat-icon { background: rgba(245,158,11,0.12); color: #fbbf24; }
+        .stat-card.red .stat-icon { background: rgba(239,68,68,0.12); color: #f87171; }
+        .stat-card.blue .stat-icon { background: rgba(59,130,246,0.12); color: #60a5fa; }
 
-        .card-details { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1rem; }
-        .detail-row { display: flex; justify-content: space-between; font-size: 0.85rem; }
-        .detail-label { color: var(--text-muted); }
-        .detail-value { font-weight: 500; color: #e2e8f0; }
+        .stat-value { font-size: 2rem; font-weight: 800; margin-bottom: 4px; }
+        .stat-label { font-size: 0.82rem; color: var(--text-secondary); }
 
-        .card-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
-        .btn-small { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        /* =============================================
+           GRID LAYOUTS
+        ============================================= */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        @media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
 
-        /* Modal Styles */
+        /* =============================================
+           TABLE
+        ============================================= */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        thead th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.15s ease; }
+        tbody tr:hover { background: rgba(99,102,241,0.04); }
+        tbody td { padding: 14px 16px; color: var(--text-primary); vertical-align: middle; }
+        tbody td small { color: var(--text-secondary); font-size: 0.78rem; }
+
+        /* =============================================
+           BADGES / TAGS
+        ============================================= */
+        .badge {
+            display: inline-flex; align-items: center;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .badge-nuevo { background: rgba(16,185,129,0.12); color: #34d399; }
+        .badge-bueno { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+        .badge-regular { background: rgba(245,158,11,0.12); color: #fcd34d; }
+        .badge-malo { background: rgba(239,68,68,0.12); color: #fca5a5; }
+        .badge-baja { background: rgba(100,116,139,0.15); color: #94a3b8; }
+        .badge-asset { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+        .badge-consumable { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+
+        /* =============================================
+           SEARCH BAR
+        ============================================= */
+        .search-wrap { position: relative; }
+        .search-wrap input {
+            width: 100%; padding: 10px 14px 10px 40px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+        .search-wrap input:focus { border-color: var(--border-active); }
+        .search-wrap input::placeholder { color: var(--text-secondary); }
+        .search-icon {
+            position: absolute; left: 13px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary); font-size: 15px;
+        }
+        .controls-row {
+            display: flex; gap: 12px; align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .controls-row .search-wrap { flex: 1; min-width: 200px; }
+
+        /* =============================================
+           MODAL
+        ============================================= */
         .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); z-index: 1000;
-            justify-content: center; align-items: center;
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(6px);
+            z-index: 200;
+            align-items: center; justify-content: center;
         }
+        .modal-overlay.open { display: flex; }
         .modal {
-            background: #1e293b; border: 1px solid var(--glass-border); border-radius: 15px; width: 100%; max-width: 500px; padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            background: #111827;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            width: 100%; max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+            animation: modalIn 0.25s ease;
         }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .modal-title { font-size: 1.5rem; font-weight: 600; }
-        .close-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
-        .form-group input, .form-group select {
-            width: 100%; padding: 0.8rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border);
-            border-radius: 8px; color: var(--text-main); font-size: 1rem;
+        @keyframes modalIn { from { opacity:0; transform:scale(0.95) translateY(10px); } to { opacity:1; transform:scale(1); } }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
         }
-        .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; }
+        .modal-header h3 { font-size: 1.05rem; font-weight: 600; }
+        .modal-close {
+            background: transparent; border: none; color: var(--text-secondary);
+            font-size: 22px; cursor: pointer; line-height: 1; padding: 4px;
+        }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
 
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .empty-state { display: none; text-align: center; padding: 3rem 0; color: var(--text-muted); }
+        /* =============================================
+           FORM
+        ============================================= */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-control, .form-select {
+            width: 100%; padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus, .form-select:focus { border-color: var(--border-active); }
+        .form-select option { background: #1e293b; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-        /* Diseño Responsivo / Mobile-Friendly */
-        @media (max-width: 768px) {
-            body { padding: 1rem; }
-            .header h1 { font-size: 1.8rem; }
-            .header p { font-size: 0.95rem; }
-            .dashboard-container { padding: 1rem; border-radius: 15px; }
-            .controls { flex-direction: column; align-items: stretch; gap: 1rem; margin-bottom: 1.5rem; }
-            .search-box { max-width: 100%; width: 100%; }
-            .actions { flex-direction: column; width: 100%; }
-            .actions .btn { width: 100%; margin-bottom: 0.5rem; }
-            .inventory-grid { grid-template-columns: 1fr; gap: 1rem; }
-            .modal { width: 95%; max-height: 90vh; overflow-y: auto; padding: 1.5rem; }
-            .form-actions { flex-direction: column-reverse; gap: 0.5rem; }
-            .form-actions button { width: 100%; }
-            .card-actions { flex-wrap: wrap; }
-            .card-actions button { flex-grow: 1; }
+        /* =============================================
+           TOAST
+        ============================================= */
+        #toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 999; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            animation: slideUp 0.3s ease;
+            display: flex; align-items: center; gap: 10px;
+        }
+        @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        .toast.success { background: linear-gradient(135deg, #059669, #10b981); }
+        .toast.error { background: linear-gradient(135deg, #dc2626, #ef4444); }
+        .toast.info { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+
+        /* =============================================
+           LOADER
+        ============================================= */
+        .loader-wrap { display: flex; justify-content: center; padding: 60px 0; }
+        .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-left-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* =============================================
+           EMPTY STATE
+        ============================================= */
+        .empty-state { text-align: center; padding: 60px 20px; }
+        .empty-state-icon { font-size: 52px; margin-bottom: 16px; opacity: 0.4; }
+        .empty-state p { color: var(--text-secondary); font-size: 0.9rem; }
+
+        /* =============================================
+           SIDEBAR MOBILE TOGGLE
+        ============================================= */
+        .sidebar-toggle { display: none; background: transparent; border: none; color: white; font-size: 22px; cursor: pointer; }
+        @media (max-width: 900px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: flex; }
+            .page-body { padding: 18px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* Chart container */
+        .chart-container { position: relative; height: 250px; }
+
+        /* Action dots */
+        .action-group { display: flex; gap: 6px; }
+
+        /* Table code pill */
+        .code-pill {
+            background: rgba(99,102,241,0.1);
+            color: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.82rem;
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Sistema de Gestión de Inventario</h1>
-        <p>Centro de Control - Activos Fijos (CRUD Activo)</p>
+<!-- =========================================
+     SIDEBAR
+========================================= -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-icon">🏛️</div>
+        <div class="logo-text">
+            <strong>Alcaldía Municipal</strong>
+            <span>Sistema de Inventario</span>
+        </div>
     </div>
 
-    <div class="dashboard-container">
-        
-        <div class="controls">
-            <div class="search-box">
-                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input type="text" id="searchInput" placeholder="Buscar por código...">
-            </div>
-            <div class="actions">
-                <button class="btn" onclick="openModal()">+ Nuevo Activo</button>
-                <button class="btn" id="refreshBtn" onclick="fetchData()">Actualizar</button>
-            </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <div class="nav-item active" onclick="showPage('dashboard',this)" id="nav-dashboard">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
         </div>
 
-        <div class="loader" id="loader"><div class="spinner"></div></div>
-        <div class="inventory-grid" id="inventoryGrid"></div>
-        <div class="empty-state" id="emptyState"><p>No se encontraron registros en el inventario.</p></div>
-    </div>
+        <div class="nav-section-label" style="margin-top:12px;">Inventario</div>
+        <div class="nav-item" onclick="showPage('assets',this)" id="nav-assets">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            Activos Fijos
+            <span class="nav-badge" id="badge-assets">...</span>
+        </div>
+        <div class="nav-item" onclick="showPage('items',this)" id="nav-items">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 2 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Catálogo de Artículos
+        </div>
+        <div class="nav-item" onclick="showPage('categories',this)" id="nav-categories">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Categorías
+        </div>
 
-    <!-- Modal Form -->
-    <div class="modal-overlay" id="assetModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modalTitle">Crear Activo Fijo</h2>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
+        <div class="nav-section-label" style="margin-top:12px;">Gestión</div>
+        <div class="nav-item" onclick="showPage('providers',this)" id="nav-providers">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Proveedores
+        </div>
+        <div class="nav-item" onclick="showPage('assignments',this)" id="nav-assignments">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Asignaciones
+        </div>
+        <div class="nav-item" onclick="showPage('offices',this)" id="nav-offices">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            Secretarías
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar">AM</div>
+            <div class="user-info">
+                <strong>Administrador</strong>
+                <span>admin@alcaldia.gov</span>
             </div>
-            <form id="assetForm" onsubmit="saveAsset(event)">
-                <input type="hidden" id="assetId">
-                
-                <div class="form-group">
-                    <label>Código de Inventario</label>
-                    <input type="text" id="invCode" required>
+        </div>
+    </div>
+</aside>
+
+<!-- =========================================
+     MAIN CONTENT
+========================================= -->
+<div class="main-content">
+    <header class="topbar">
+        <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <div class="topbar-title">
+            <h2 id="page-title">Dashboard</h2>
+            <span id="page-subtitle">Resumen general del sistema</span>
+        </div>
+        <div class="topbar-actions">
+            <button class="btn btn-secondary btn-sm" onclick="refreshCurrentPage()">↻ Actualizar</button>
+        </div>
+    </header>
+
+    <main class="page-body">
+
+        <!-- =========================================
+             DASHBOARD PAGE
+        ========================================= -->
+        <section class="page active" id="page-dashboard">
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card purple"><div class="stat-icon">📦</div><div class="stat-value" id="s-total">—</div><div class="stat-label">Total Activos Fijos</div></div>
+                <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value" id="s-new">—</div><div class="stat-label">En Estado Nuevo</div></div>
+                <div class="stat-card orange"><div class="stat-icon">⚠️</div><div class="stat-value" id="s-regular">—</div><div class="stat-label">Estado Regular</div></div>
+                <div class="stat-card red"><div class="stat-icon">🔴</div><div class="stat-value" id="s-baja">—</div><div class="stat-label">Dados de Baja</div></div>
+                <div class="stat-card blue"><div class="stat-icon">🏢</div><div class="stat-value" id="s-providers">—</div><div class="stat-label">Proveedores</div></div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><h3>📊 Distribución por Estado</h3></div>
+                    <div class="card-body"><div class="chart-container"><canvas id="chartStatus"></canvas></div></div>
                 </div>
-                <div class="form-group">
-                    <label>Artículo Base</label>
-                    <select id="itemSelect" required><option value="">Cargando...</option></select>
+                <div class="card">
+                    <div class="card-header"><h3>📋 Activos por Categoría</h3></div>
+                    <div class="card-body"><div class="chart-container"><canvas id="chartCategory"></canvas></div></div>
                 </div>
+            </div>
+
+            <div style="margin-top:20px" class="card">
+                <div class="card-header">
+                    <h3>🕐 Últimos Activos Registrados</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="showPage('assets', document.getElementById('nav-assets'))">Ver todos</button>
+                </div>
+                <div class="card-body" style="padding:0">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Código</th><th>Artículo</th><th>Proveedor</th><th>Estado</th></tr></thead>
+                            <tbody id="dashboard-recent"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =========================================
+             ASSETS PAGE
+        ========================================= -->
+        <section class="page" id="page-assets">
+            <div class="controls-row">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar por código, artículo o serie..." id="assets-search" oninput="filterAssets(this.value)">
+                </div>
+                <select class="form-select" style="width:auto;padding:10px 14px" id="assets-status-filter" onchange="filterAssets(document.getElementById('assets-search').value)">
+                    <option value="">Todos los estados</option>
+                    <option value="nuevo">Nuevo</option>
+                    <option value="bueno">Bueno</option>
+                    <option value="regular">Regular</option>
+                    <option value="malo">Malo</option>
+                    <option value="baja">De Baja</option>
+                </select>
+                <button class="btn btn-primary" onclick="openAssetModal()">+ Nuevo Activo</button>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th><th>Artículo / Categoría</th><th>Serie</th><th>Proveedor</th><th>Precio</th><th>Estado</th><th>Custodio</th><th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assets-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="loader-wrap" id="assets-loader"><div class="spinner"></div></div>
+                <div class="empty-state" id="assets-empty" style="display:none"><div class="empty-state-icon">📭</div><p>No se encontraron activos fijos</p></div>
+            </div>
+        </section>
+
+        <!-- =========================================
+             ITEMS PAGE
+        ========================================= -->
+        <section class="page" id="page-items">
+            <div class="controls-row">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar artículo..." oninput="filterItems(this.value)">
+                </div>
+                <select class="form-select" style="width:auto;padding:10px 14px" onchange="filterItemsByType(this.value)">
+                    <option value="">Todos los tipos</option>
+                    <option value="1">Activos Fijos</option>
+                    <option value="0">Consumibles</option>
+                </select>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>ID</th><th>Nombre del Artículo</th><th>Categoría</th><th>Tipo</th></tr></thead>
+                        <tbody id="items-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="loader-wrap" id="items-loader"><div class="spinner"></div></div>
+                <div class="empty-state" id="items-empty" style="display:none"><div class="empty-state-icon">📭</div><p>No se encontraron artículos</p></div>
+            </div>
+        </section>
+
+        <!-- =========================================
+             CATEGORIES PAGE
+        ========================================= -->
+        <section class="page" id="page-categories">
+            <div class="controls-row">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar categoría..." oninput="filterCategories(this.value)">
+                </div>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Código</th><th>Nombre</th><th>N° Artículos</th></tr></thead>
+                        <tbody id="categories-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="loader-wrap" id="categories-loader"><div class="spinner"></div></div>
+                <div class="empty-state" id="categories-empty" style="display:none"><div class="empty-state-icon">📭</div><p>No se encontraron categorías</p></div>
+            </div>
+        </section>
+
+        <!-- =========================================
+             PROVIDERS PAGE
+        ========================================= -->
+        <section class="page" id="page-providers">
+            <div class="controls-row">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar por NIT o razón social..." oninput="filterProviders(this.value)">
+                </div>
+                <button class="btn btn-primary" onclick="openProviderModal()">+ Nuevo Proveedor</button>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>NIT</th><th>Razón Social</th><th>Contacto</th><th>Acciones</th></tr></thead>
+                        <tbody id="providers-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="loader-wrap" id="providers-loader"><div class="spinner"></div></div>
+                <div class="empty-state" id="providers-empty" style="display:none"><div class="empty-state-icon">📭</div><p>No se encontraron proveedores</p></div>
+            </div>
+        </section>
+
+        <!-- =========================================
+             ASSIGNMENTS PAGE
+        ========================================= -->
+        <section class="page" id="page-assignments">
+            <div class="controls-row">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar por custodio o código..." oninput="filterAssignments(this.value)">
+                </div>
+                <button class="btn btn-primary" onclick="openAssignModal()">+ Nueva Asignación</button>
+            </div>
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Activo</th><th>Custodio</th><th>Secretaría</th><th>Fecha</th><th>Estado</th></tr></thead>
+                        <tbody id="assignments-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="loader-wrap" id="assignments-loader"><div class="spinner"></div></div>
+                <div class="empty-state" id="assignments-empty" style="display:none"><div class="empty-state-icon">📭</div><p>No hay asignaciones registradas</p></div>
+            </div>
+        </section>
+
+        <!-- =========================================
+             OFFICES PAGE
+        ========================================= -->
+        <section class="page" id="page-offices">
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>ID</th><th>Nombre de la Secretaría</th><th>Asignaciones</th></tr></thead>
+                        <tbody id="offices-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="loader-wrap" id="offices-loader"><div class="spinner"></div></div>
+                <div class="empty-state" id="offices-empty" style="display:none"><div class="empty-state-icon">📭</div><p>No hay secretarías registradas</p></div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- =========================================
+     MODALS
+========================================= -->
+
+<!-- Asset Modal -->
+<div class="modal-overlay" id="asset-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="asset-modal-title">Nuevo Activo Fijo</h3>
+            <button class="modal-close" onclick="closeModal('asset-modal')">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="asset-id">
+            <div class="form-row">
                 <div class="form-group">
-                    <label>Proveedor</label>
-                    <select id="providerSelect" required><option value="">Cargando...</option></select>
+                    <label>Código de Inventario *</label>
+                    <input type="text" id="asset-code" class="form-control" placeholder="INV-2026-XXXX">
                 </div>
                 <div class="form-group">
                     <label>Número de Serie</label>
-                    <input type="text" id="serialNum">
+                    <input type="text" id="asset-serial" class="form-control" placeholder="SN-XXXXXXXX">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Artículo Base *</label>
+                <select id="asset-item" class="form-select"><option value="">Seleccionar artículo...</option></select>
+            </div>
+            <div class="form-group">
+                <label>Proveedor *</label>
+                <select id="asset-provider" class="form-select"><option value="">Seleccionar proveedor...</option></select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Precio de Compra</label>
+                    <input type="number" id="asset-price" class="form-control" placeholder="0.00" step="0.01">
                 </div>
                 <div class="form-group">
-                    <label>Precio Compra</label>
-                    <input type="number" step="0.01" id="price">
-                </div>
-                <div class="form-group">
-                    <label>Estado</label>
-                    <select id="statusSelect" required>
+                    <label>Estado *</label>
+                    <select id="asset-status" class="form-select">
                         <option value="nuevo">Nuevo</option>
                         <option value="bueno">Bueno</option>
                         <option value="regular">Regular</option>
@@ -215,187 +783,574 @@
                         <option value="baja">De Baja</option>
                     </select>
                 </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-danger" onclick="closeModal()">Cancelar</button>
-                    <button type="submit" class="btn">Guardar</button>
-                </div>
-            </form>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('asset-modal')">Cancelar</button>
+            <button class="btn btn-primary" id="asset-save-btn" onclick="saveAsset()">Guardar Activo</button>
         </div>
     </div>
+</div>
 
-    <script>
-        let assetsData = [];
-        let itemsList = [];
-        let providersList = [];
+<!-- Provider Modal -->
+<div class="modal-overlay" id="provider-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="provider-modal-title">Nuevo Proveedor</h3>
+            <button class="modal-close" onclick="closeModal('provider-modal')">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="provider-id">
+            <div class="form-group">
+                <label>NIT *</label>
+                <input type="text" id="provider-nit" class="form-control" placeholder="900.123.456-7">
+            </div>
+            <div class="form-group">
+                <label>Razón Social *</label>
+                <input type="text" id="provider-name" class="form-control" placeholder="Nombre de la empresa">
+            </div>
+            <div class="form-group">
+                <label>Contacto</label>
+                <input type="text" id="provider-contact" class="form-control" placeholder="Nombre o teléfono">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('provider-modal')">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveProvider()">Guardar Proveedor</button>
+        </div>
+    </div>
+</div>
 
-        async function fetchData() {
-            const loader = document.getElementById('loader');
-            const grid = document.getElementById('inventoryGrid');
-            const emptyState = document.getElementById('emptyState');
-            loader.style.display = 'flex'; grid.style.display = 'none'; emptyState.style.display = 'none';
+<!-- Assign Modal -->
+<div class="modal-overlay" id="assign-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Nueva Asignación</h3>
+            <button class="modal-close" onclick="closeModal('assign-modal')">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Activo Fijo *</label>
+                <select id="assign-asset" class="form-select"><option value="">Seleccionar activo...</option></select>
+            </div>
+            <div class="form-group">
+                <label>Secretaría *</label>
+                <select id="assign-office" class="form-select"><option value="">Seleccionar secretaría...</option></select>
+            </div>
+            <div class="form-group">
+                <label>Nombre del Custodio *</label>
+                <input type="text" id="assign-custodian" class="form-control" placeholder="Nombre y apellido del funcionario">
+            </div>
+            <div class="form-group">
+                <label>Fecha de Asignación *</label>
+                <input type="date" id="assign-date" class="form-control">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('assign-modal')">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveAssignment()">Registrar Asignación</button>
+        </div>
+    </div>
+</div>
 
-            try {
-                // Fetch assets
-                let res = await fetch('/api/fixed-assets');
-                let json = await res.json();
-                assetsData = json.data;
+<!-- Toast container -->
+<div id="toast-container"></div>
 
-                // Fetch references for dropdowns (only once if possible, but fine here)
-                if(itemsList.length === 0) {
-                    let resItems = await fetch('/api/inventory');
-                    let jsonItems = await resItems.json();
-                    itemsList = jsonItems.data;
+<!-- =========================================
+     JAVASCRIPT
+========================================= -->
+<script>
+const API = '/api';
+let allAssets = [], allItems = [], allProviders = [], allAssignments = [], allOffices = [], allCategories = [];
+let chartStatus = null, chartCategory = null;
 
-                    let resProv = await fetch('/api/providers');
-                    let jsonProv = await resProv.json();
-                    providersList = jsonProv.data;
-                }
+/* ============================================================
+   PAGE NAVIGATION
+============================================================ */
+const pageTitles = {
+    dashboard: ['Dashboard', 'Resumen general del sistema'],
+    assets: ['Activos Fijos', 'Gestión completa del inventario de activos'],
+    items: ['Catálogo de Artículos', 'Todos los artículos del sistema'],
+    categories: ['Categorías', 'Clasificación de artículos'],
+    providers: ['Proveedores', 'Gestión de proveedores y fabricantes'],
+    assignments: ['Asignaciones', 'Trazabilidad de custodios y secretarías'],
+    offices: ['Secretarías', 'Dependencias de la alcaldía'],
+};
+function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if(el) el.classList.add('active');
+    const [title, sub] = pageTitles[name] || [name, ''];
+    document.getElementById('page-title').textContent = title;
+    document.getElementById('page-subtitle').textContent = sub;
+    loadPage(name);
+}
+function refreshCurrentPage() {
+    const active = document.querySelector('.page.active');
+    if(active) {
+        const name = active.id.replace('page-', '');
+        loadPage(name);
+    }
+}
 
-                renderGrid(assetsData);
-            } catch (error) {
-                console.error(error);
-                emptyState.innerHTML = "<p style='color: #ef4444;'>Error de conexión con el servidor API.</p>";
-                emptyState.style.display = 'block';
-            } finally {
-                loader.style.display = 'none';
-            }
+async function loadPage(name) {
+    if(name === 'dashboard') await loadDashboard();
+    if(name === 'assets') await loadAssets();
+    if(name === 'items') await loadItems();
+    if(name === 'categories') await loadCategories();
+    if(name === 'providers') await loadProviders();
+    if(name === 'assignments') await loadAssignments();
+    if(name === 'offices') await loadOffices();
+}
+
+/* ============================================================
+   FETCH HELPER
+============================================================ */
+async function apiFetch(path, opts={}) {
+    const res = await fetch(API + path, {
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        ...opts
+    });
+    return res.json();
+}
+
+/* ============================================================
+   DASHBOARD
+============================================================ */
+async function loadDashboard() {
+    try {
+        const [assetsRes, providersRes] = await Promise.all([
+            apiFetch('/fixed-assets'),
+            apiFetch('/providers'),
+        ]);
+        allAssets = assetsRes.data || [];
+        allProviders = providersRes.data || [];
+
+        document.getElementById('s-total').textContent = allAssets.length;
+        document.getElementById('s-new').textContent = allAssets.filter(a => a.status === 'nuevo').length;
+        document.getElementById('s-regular').textContent = allAssets.filter(a => a.status === 'regular').length;
+        document.getElementById('s-baja').textContent = allAssets.filter(a => a.status === 'baja').length;
+        document.getElementById('s-providers').textContent = allProviders.length;
+        document.getElementById('badge-assets').textContent = allAssets.length;
+
+        renderDashboardCharts(allAssets);
+        renderRecentAssets(allAssets.slice(0, 8));
+    } catch(e) { showToast('Error conectando con el servidor', 'error'); }
+}
+
+function renderDashboardCharts(assets) {
+    const statusCount = {};
+    assets.forEach(a => { statusCount[a.status] = (statusCount[a.status] || 0) + 1; });
+
+    const colors = { nuevo:'#10b981', bueno:'#6366f1', regular:'#f59e0b', malo:'#ef4444', baja:'#64748b' };
+    const labels = { nuevo:'Nuevo', bueno:'Bueno', regular:'Regular', malo:'Malo', baja:'Baja' };
+
+    if(chartStatus) chartStatus.destroy();
+    const ctx1 = document.getElementById('chartStatus').getContext('2d');
+    chartStatus = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(statusCount).map(k => labels[k] || k),
+            datasets: [{ data: Object.values(statusCount), backgroundColor: Object.keys(statusCount).map(k => colors[k] || '#6366f1'), borderWidth: 2, borderColor: '#111827' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Inter' } } } } }
+    });
+
+    const catCount = {};
+    assets.forEach(a => { const cat = a.item?.category?.name || 'Sin categoría'; catCount[cat] = (catCount[cat] || 0) + 1; });
+
+    if(chartCategory) chartCategory.destroy();
+    const ctx2 = document.getElementById('chartCategory').getContext('2d');
+    chartCategory = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(catCount),
+            datasets: [{ label: 'Activos', data: Object.values(catCount), backgroundColor: 'rgba(99,102,241,0.6)', borderColor: '#6366f1', borderWidth: 1, borderRadius: 6 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.04)' } } }
         }
+    });
+}
 
-        function renderGrid(assets) {
-            const grid = document.getElementById('inventoryGrid');
-            const emptyState = document.getElementById('emptyState');
-            grid.innerHTML = '';
+function renderRecentAssets(assets) {
+    const tbody = document.getElementById('dashboard-recent');
+    tbody.innerHTML = assets.map(a => `
+        <tr>
+            <td><span class="code-pill">${a.inventory_code}</span></td>
+            <td>${a.item?.name || '—'}<br><small>${a.item?.category?.name || ''}</small></td>
+            <td><small>${a.provider?.company_name || '—'}</small></td>
+            <td>${badgeStatus(a.status)}</td>
+        </tr>
+    `).join('');
+}
 
-            if (assets.length === 0) {
-                emptyState.style.display = 'block';
-                return;
-            }
+/* ============================================================
+   FIXED ASSETS
+============================================================ */
+async function loadAssets() {
+    showLoader('assets');
+    try {
+        const res = await apiFetch('/fixed-assets');
+        allAssets = res.data || [];
+        document.getElementById('badge-assets').textContent = allAssets.length;
+        renderAssetsTable(allAssets);
+    } catch(e) { showToast('Error cargando activos', 'error'); } finally { hideLoader('assets'); }
+}
 
-            grid.style.display = 'grid';
+function renderAssetsTable(assets) {
+    const tbody = document.getElementById('assets-table-body');
+    if(!assets.length) { tbody.innerHTML = ''; document.getElementById('assets-empty').style.display = ''; return; }
+    document.getElementById('assets-empty').style.display = 'none';
+    tbody.innerHTML = assets.map(a => `
+        <tr>
+            <td><span class="code-pill">${a.inventory_code}</span></td>
+            <td><strong>${a.item?.name || '—'}</strong><br><small>${a.item?.category?.name || 'Sin categoría'}</small></td>
+            <td><small>${a.serial_number || 'N/A'}</small></td>
+            <td><small>${a.provider?.company_name || '—'}</small></td>
+            <td><small>${a.purchase_price ? '$' + Number(a.purchase_price).toLocaleString() : 'N/A'}</small></td>
+            <td>${badgeStatus(a.status)}</td>
+            <td><small>${a.active_assignment ? a.active_assignment.custodian_name : '<span style="color:var(--text-muted)">Sin asignar</span>'}</small></td>
+            <td>
+                <div class="action-group">
+                    <button class="btn btn-secondary btn-sm" onclick='editAsset(${JSON.stringify(a)})'>✏️</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteAsset(${a.id})">🗑️</button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
 
-            assets.forEach((asset, index) => {
-                const itemData = asset.item || {};
-                const provData = asset.provider || {};
-                
-                const card = document.createElement('div');
-                card.className = 'asset-card';
-                card.style.animation = `fadeInUp 0.5s ease-out ${index * 0.1}s both`;
+function filterAssets(term) {
+    const status = document.getElementById('assets-status-filter').value;
+    let filtered = allAssets;
+    if(term) {
+        const t = term.toLowerCase();
+        filtered = filtered.filter(a =>
+            a.inventory_code.toLowerCase().includes(t) ||
+            (a.item?.name || '').toLowerCase().includes(t) ||
+            (a.serial_number || '').toLowerCase().includes(t)
+        );
+    }
+    if(status) filtered = filtered.filter(a => a.status === status);
+    renderAssetsTable(filtered);
+}
 
-                card.innerHTML = `
-                    <div class="card-header">
-                        <span class="tag-status status-asset">${asset.status}</span>
-                    </div>
-                    <div class="card-title">${asset.inventory_code}</div>
-                    
-                    <div class="card-details">
-                        <div class="detail-row">
-                            <span class="detail-label">Artículo</span>
-                            <span class="detail-value">${itemData.name || 'Desconocido'}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">N/S</span>
-                            <span class="detail-value">${asset.serial_number || 'N/A'}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Proveedor</span>
-                            <span class="detail-value">${provData.company_name || 'N/A'}</span>
-                        </div>
-                    </div>
-                    <div class="card-actions">
-                        <button class="btn btn-small" onclick='editAsset(${JSON.stringify(asset)})'>Editar</button>
-                        <button class="btn btn-small btn-danger" onclick='deleteAsset(${asset.id})'>Eliminar</button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
+async function openAssetModal() {
+    document.getElementById('asset-modal-title').textContent = 'Nuevo Activo Fijo';
+    document.getElementById('asset-id').value = '';
+    document.getElementById('asset-code').value = '';
+    document.getElementById('asset-serial').value = '';
+    document.getElementById('asset-price').value = '';
+    document.getElementById('asset-status').value = 'nuevo';
+    await populateAssetSelects();
+    openModal('asset-modal');
+}
 
-        function populateSelects() {
-            const itemSelect = document.getElementById('itemSelect');
-            itemSelect.innerHTML = itemsList.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
-            
-            const provSelect = document.getElementById('providerSelect');
-            provSelect.innerHTML = providersList.map(p => `<option value="${p.id}">${p.company_name}</option>`).join('');
-        }
+async function editAsset(asset) {
+    document.getElementById('asset-modal-title').textContent = 'Editar Activo Fijo';
+    document.getElementById('asset-id').value = asset.id;
+    document.getElementById('asset-code').value = asset.inventory_code;
+    document.getElementById('asset-serial').value = asset.serial_number || '';
+    document.getElementById('asset-price').value = asset.purchase_price || '';
+    document.getElementById('asset-status').value = asset.status;
+    await populateAssetSelects(asset.item_id, asset.provider_id);
+    openModal('asset-modal');
+}
 
-        function openModal() {
-            document.getElementById('modalTitle').innerText = 'Crear Activo Fijo';
-            document.getElementById('assetForm').reset();
-            document.getElementById('assetId').value = '';
-            populateSelects();
-            document.getElementById('assetModal').style.display = 'flex';
-        }
+async function populateAssetSelects(selItem, selProv) {
+    if(!allItems.length) { const r = await apiFetch('/inventory'); allItems = r.data || []; }
+    if(!allProviders.length) { const r = await apiFetch('/providers'); allProviders = r.data || []; }
+    document.getElementById('asset-item').innerHTML = '<option value="">Seleccionar artículo...</option>' + allItems.map(i => `<option value="${i.id}" ${i.id == selItem ? 'selected':''}>${i.name}</option>`).join('');
+    document.getElementById('asset-provider').innerHTML = '<option value="">Seleccionar proveedor...</option>' + allProviders.map(p => `<option value="${p.id}" ${p.id == selProv ? 'selected':''}>${p.company_name}</option>`).join('');
+}
 
-        function editAsset(asset) {
-            document.getElementById('modalTitle').innerText = 'Editar Activo Fijo';
-            populateSelects();
-            document.getElementById('assetId').value = asset.id;
-            document.getElementById('invCode').value = asset.inventory_code;
-            document.getElementById('itemSelect').value = asset.item_id;
-            document.getElementById('providerSelect').value = asset.provider_id;
-            document.getElementById('serialNum').value = asset.serial_number || '';
-            document.getElementById('price').value = asset.purchase_price || '';
-            document.getElementById('statusSelect').value = asset.status;
-            
-            document.getElementById('assetModal').style.display = 'flex';
-        }
+async function saveAsset() {
+    const id = document.getElementById('asset-id').value;
+    const payload = {
+        inventory_code: document.getElementById('asset-code').value,
+        item_id: document.getElementById('asset-item').value,
+        provider_id: document.getElementById('asset-provider').value,
+        serial_number: document.getElementById('asset-serial').value,
+        purchase_price: document.getElementById('asset-price').value || null,
+        status: document.getElementById('asset-status').value,
+    };
+    if(!payload.inventory_code || !payload.item_id || !payload.provider_id) { showToast('Completa los campos obligatorios', 'error'); return; }
+    const btn = document.getElementById('asset-save-btn');
+    btn.textContent = 'Guardando...'; btn.disabled = true;
+    try {
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/fixed-assets/${id}` : '/fixed-assets';
+        const res = await apiFetch(url, { method, body: JSON.stringify(payload) });
+        if(res.data) {
+            closeModal('asset-modal');
+            showToast(id ? 'Activo actualizado' : 'Activo creado exitosamente', 'success');
+            loadAssets();
+        } else { showToast(res.message || 'Error al guardar', 'error'); }
+    } catch(e) { showToast('Error de red', 'error'); }
+    finally { btn.textContent = 'Guardar Activo'; btn.disabled = false; }
+}
 
-        function closeModal() {
-            document.getElementById('assetModal').style.display = 'none';
-        }
+async function deleteAsset(id) {
+    if(!confirm('¿Estás seguro de eliminar este activo? Esta acción es irreversible.')) return;
+    await apiFetch(`/fixed-assets/${id}`, { method: 'DELETE' });
+    showToast('Activo eliminado', 'info');
+    loadAssets();
+}
 
-        async function saveAsset(e) {
-            e.preventDefault();
-            const id = document.getElementById('assetId').value;
-            const payload = {
-                inventory_code: document.getElementById('invCode').value,
-                item_id: document.getElementById('itemSelect').value,
-                provider_id: document.getElementById('providerSelect').value,
-                serial_number: document.getElementById('serialNum').value,
-                purchase_price: document.getElementById('price').value,
-                status: document.getElementById('statusSelect').value,
-            };
+/* ============================================================
+   ITEMS
+============================================================ */
+let allItemsRaw = [];
+async function loadItems() {
+    showLoader('items');
+    try {
+        const res = await apiFetch('/inventory');
+        allItemsRaw = res.data || [];
+        renderItemsTable(allItemsRaw);
+    } catch(e) {} finally { hideLoader('items'); }
+}
+function renderItemsTable(items) {
+    const tbody = document.getElementById('items-table-body');
+    if(!items.length) { tbody.innerHTML=''; document.getElementById('items-empty').style.display=''; return; }
+    document.getElementById('items-empty').style.display = 'none';
+    tbody.innerHTML = items.map(i => `
+        <tr>
+            <td><small style="color:var(--text-muted)">#${i.id}</small></td>
+            <td><strong>${i.name}</strong></td>
+            <td>${i.category?.name || '—'} <small style="color:var(--text-muted)">${i.category?.code || ''}</small></td>
+            <td>${i.is_asset ? '<span class="badge badge-asset">Activo Fijo</span>' : '<span class="badge badge-consumable">Consumible</span>'}</td>
+        </tr>
+    `).join('');
+}
+function filterItems(term) {
+    const t = term.toLowerCase();
+    renderItemsTable(allItemsRaw.filter(i => i.name.toLowerCase().includes(t)));
+}
+function filterItemsByType(val) {
+    if(val === '') { renderItemsTable(allItemsRaw); return; }
+    renderItemsTable(allItemsRaw.filter(i => String(i.is_asset ? 1 : 0) === val));
+}
 
-            const method = id ? 'PUT' : 'POST';
-            const url = id ? '/api/fixed-assets/' + id : '/api/fixed-assets';
+/* ============================================================
+   CATEGORIES
+============================================================ */
+async function loadCategories() {
+    showLoader('categories');
+    try {
+        const res = await apiFetch('/categories');
+        allCategories = (res.data || []).map(c => ({ ...c, count: c.items_count ?? 0 }));
+        renderCategories(allCategories);
+    } catch(e) {} finally { hideLoader('categories'); }
+}
+function renderCategories(cats) {
+    const tbody = document.getElementById('categories-table-body');
+    if(!cats.length) { tbody.innerHTML=''; document.getElementById('categories-empty').style.display=''; return; }
+    document.getElementById('categories-empty').style.display = 'none';
+    tbody.innerHTML = cats.map(c => `
+        <tr>
+            <td><span class="code-pill">${c.code}</span></td>
+            <td><strong>${c.name}</strong></td>
+            <td><span class="badge badge-bueno">${c.count} artículo(s)</span></td>
+        </tr>
+    `).join('');
+}
+function filterCategories(term) {
+    const t = term.toLowerCase();
+    renderCategories(allCategories.filter(c => c.name.toLowerCase().includes(t) || c.code.toLowerCase().includes(t)));
+}
 
-            try {
-                let res = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if(res.ok) {
-                    closeModal();
-                    fetchData();
-                } else {
-                    let err = await res.json();
-                    alert("Error: " + (err.message || "Verifique los datos."));
-                }
-            } catch (err) { alert("Error de red"); }
-        }
+/* ============================================================
+   PROVIDERS
+============================================================ */
+async function loadProviders() {
+    showLoader('providers');
+    try {
+        const res = await apiFetch('/providers');
+        allProviders = res.data || [];
+        renderProvidersTable(allProviders);
+    } catch(e) {} finally { hideLoader('providers'); }
+}
+function renderProvidersTable(providers) {
+    const tbody = document.getElementById('providers-table-body');
+    if(!providers.length) { tbody.innerHTML=''; document.getElementById('providers-empty').style.display=''; return; }
+    document.getElementById('providers-empty').style.display = 'none';
+    tbody.innerHTML = providers.map(p => `
+        <tr>
+            <td><span class="code-pill">${p.nit}</span></td>
+            <td><strong>${p.company_name}</strong></td>
+            <td><small>${p.contact || '—'}</small></td>
+            <td>
+                <div class="action-group">
+                    <button class="btn btn-secondary btn-sm" onclick='editProvider(${JSON.stringify(p)})'>✏️</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteProvider(${p.id})">🗑️</button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+function filterProviders(term) {
+    const t = term.toLowerCase();
+    renderProvidersTable(allProviders.filter(p => p.nit.toLowerCase().includes(t) || p.company_name.toLowerCase().includes(t)));
+}
+function openProviderModal() {
+    document.getElementById('provider-modal-title').textContent = 'Nuevo Proveedor';
+    document.getElementById('provider-id').value = '';
+    document.getElementById('provider-nit').value = '';
+    document.getElementById('provider-name').value = '';
+    document.getElementById('provider-contact').value = '';
+    openModal('provider-modal');
+}
+function editProvider(p) {
+    document.getElementById('provider-modal-title').textContent = 'Editar Proveedor';
+    document.getElementById('provider-id').value = p.id;
+    document.getElementById('provider-nit').value = p.nit;
+    document.getElementById('provider-name').value = p.company_name;
+    document.getElementById('provider-contact').value = p.contact || '';
+    openModal('provider-modal');
+}
+async function saveProvider() {
+    const id = document.getElementById('provider-id').value;
+    const payload = { nit: document.getElementById('provider-nit').value, company_name: document.getElementById('provider-name').value, contact: document.getElementById('provider-contact').value };
+    if(!payload.nit || !payload.company_name) { showToast('NIT y Razón Social son obligatorios', 'error'); return; }
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/providers/${id}` : '/providers';
+    const res = await apiFetch(url, { method, body: JSON.stringify(payload) });
+    if(res.data) { closeModal('provider-modal'); showToast(id ? 'Proveedor actualizado' : 'Proveedor creado', 'success'); loadProviders(); }
+    else showToast(res.message || 'Error al guardar', 'error');
+}
+async function deleteProvider(id) {
+    if(!confirm('¿Eliminar este proveedor?')) return;
+    await apiFetch(`/providers/${id}`, { method: 'DELETE' });
+    showToast('Proveedor eliminado', 'info'); loadProviders();
+}
 
-        async function deleteAsset(id) {
-            if(!confirm("¿Estás seguro de eliminar este activo?")) return;
-            try {
-                let res = await fetch('/api/fixed-assets/' + id, { method: 'DELETE', headers:{'Accept':'application/json'} });
-                if(res.ok) fetchData();
-                else alert("Error eliminando activo.");
-            } catch(e) { alert("Error de red"); }
-        }
+/* ============================================================
+   ASSIGNMENTS
+============================================================ */
+async function loadAssignments() {
+    showLoader('assignments');
+    try {
+        // Cargamos activos para derivar asignaciones
+        const res = await apiFetch('/fixed-assets');
+        const assets = res.data || [];
+        allAssignments = assets.filter(a => a.active_assignment).map(a => ({
+            asset: a,
+            assignment: a.active_assignment
+        }));
+        renderAssignmentsTable(allAssignments);
+    } catch(e) {} finally { hideLoader('assignments'); }
+}
+function renderAssignmentsTable(list) {
+    const tbody = document.getElementById('assignments-table-body');
+    if(!list.length) { tbody.innerHTML=''; document.getElementById('assignments-empty').style.display=''; return; }
+    document.getElementById('assignments-empty').style.display = 'none';
+    tbody.innerHTML = list.map(({asset, assignment}) => `
+        <tr>
+            <td><span class="code-pill">${asset.inventory_code}</span><br><small>${asset.item?.name || ''}</small></td>
+            <td><strong>${assignment.custodian_name}</strong></td>
+            <td>${assignment.office?.name || '—'}</td>
+            <td><small>${assignment.assignment_date}</small></td>
+            <td><span class="badge badge-nuevo">Activa</span></td>
+        </tr>
+    `).join('');
+}
+function filterAssignments(term) {
+    const t = term.toLowerCase();
+    renderAssignmentsTable(allAssignments.filter(({asset,assignment}) =>
+        assignment.custodian_name.toLowerCase().includes(t) || asset.inventory_code.toLowerCase().includes(t)
+    ));
+}
+async function openAssignModal() {
+    if(!allAssets.length) { const r = await apiFetch('/fixed-assets'); allAssets = r.data || []; }
+    if(!allOffices.length) await loadOfficesData();
+    document.getElementById('assign-asset').innerHTML = '<option value="">Seleccionar activo...</option>' + allAssets.map(a => `<option value="${a.id}">${a.inventory_code} - ${a.item?.name || ''}</option>`).join('');
+    document.getElementById('assign-office').innerHTML = '<option value="">Seleccionar secretaría...</option>' + allOffices.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+    document.getElementById('assign-date').value = new Date().toISOString().split('T')[0];
+    openModal('assign-modal');
+}
+async function saveAssignment() {
+    const payload = {
+        fixed_asset_id: document.getElementById('assign-asset').value,
+        office_id: document.getElementById('assign-office').value,
+        custodian_name: document.getElementById('assign-custodian').value,
+        assignment_date: document.getElementById('assign-date').value,
+    };
+    if(!payload.fixed_asset_id || !payload.office_id || !payload.custodian_name || !payload.assignment_date) {
+        showToast('Todos los campos son obligatorios', 'error'); return;
+    }
+    const res = await apiFetch('/assignments/assign', { method: 'POST', body: JSON.stringify(payload) });
+    if(res.data || res.message?.includes('success') || res.assignment) {
+        closeModal('assign-modal'); showToast('Asignación registrada exitosamente', 'success'); loadAssignments();
+    } else showToast(res.message || 'Error al asignar', 'error');
+}
 
-        // Search Filter
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = assetsData.filter(asset => 
-                asset.inventory_code.toLowerCase().includes(term) ||
-                (asset.item && asset.item.name.toLowerCase().includes(term))
-            );
-            renderGrid(filtered);
-        });
+/* ============================================================
+   OFFICES
+============================================================ */
+async function loadOfficesData() {
+    const res = await apiFetch('/offices');
+    allOffices = res.data || [];
+    return allOffices;
+}
+async function loadOffices() {
+    showLoader('offices');
+    try {
+        await loadOfficesData();
+        const tbody = document.getElementById('offices-table-body');
+        if(!allOffices.length) { tbody.innerHTML=''; document.getElementById('offices-empty').style.display=''; return; }
+        document.getElementById('offices-empty').style.display = 'none';
+        tbody.innerHTML = allOffices.map(o => `
+            <tr>
+                <td><small style="color:var(--text-muted)">#${o.id}</small></td>
+                <td><strong>${o.name}</strong></td>
+                <td><span class="badge badge-bueno">${o.assignments_count ?? 0} asignación(es)</span></td>
+            </tr>
+        `).join('');
+    } catch(e) { console.error(e); } finally { hideLoader('offices'); }
+}
 
-        window.onload = fetchData;
-    </script>
+/* ============================================================
+   UI HELPERS
+============================================================ */
+function badgeStatus(status) {
+    const map = { nuevo:'badge-nuevo', bueno:'badge-bueno', regular:'badge-regular', malo:'badge-malo', baja:'badge-baja' };
+    const labels = { nuevo:'Nuevo', bueno:'Bueno', regular:'Regular', malo:'Malo', baja:'De Baja' };
+    return `<span class="badge ${map[status]||'badge-bueno'}">${labels[status]||status}</span>`;
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showLoader(page) {
+    const el = document.getElementById(page + '-loader');
+    if(el) el.style.display = 'flex';
+    const tbody = document.getElementById(page + '-table-body');
+    if(tbody) tbody.innerHTML = '';
+}
+function hideLoader(page) {
+    const el = document.getElementById(page + '-loader');
+    if(el) el.style.display = 'none';
+}
+function showToast(msg, type='info') {
+    const icons = { success:'✅', error:'❌', info:'ℹ️' };
+    const div = document.createElement('div');
+    div.className = `toast ${type}`;
+    div.innerHTML = `<span>${icons[type]}</span> ${msg}`;
+    document.getElementById('toast-container').appendChild(div);
+    setTimeout(() => div.remove(), 3500);
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+window.addEventListener('click', e => {
+    if(e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('open');
+    }
+});
+loadPage('dashboard');
+</script>
 </body>
 </html>

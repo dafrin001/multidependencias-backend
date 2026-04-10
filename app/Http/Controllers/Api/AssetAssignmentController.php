@@ -12,15 +12,30 @@ use Illuminate\Support\Facades\DB;
 class AssetAssignmentController extends Controller
 {
     /**
+     * List all assignments (optionally only active ones)
+     */
+    public function index(Request $request)
+    {
+        $query = Assignment::with(['fixedAsset.item', 'fixedAsset.item.category', 'office'])
+            ->orderBy('assignment_date', 'desc');
+
+        if ($request->boolean('active_only', false)) {
+            $query->where('is_active', true);
+        }
+
+        return response()->json(['data' => $query->get()]);
+    }
+
+    /**
      * Assign a fixed asset to an office and custodian
      */
     public function assign(Request $request)
     {
         $validated = $request->validate([
             'fixed_asset_id' => 'required|exists:fixed_assets,id',
-            'office_id' => 'required|exists:offices,id',
+            'office_id'      => 'required|exists:offices,id',
             'custodian_name' => 'required|string|max:255',
-            'assignment_date' => 'required|date',
+            'assignment_date'=> 'required|date',
         ]);
 
         DB::beginTransaction();
@@ -34,18 +49,20 @@ class AssetAssignmentController extends Controller
             // Create new assignment
             $assignment = Assignment::create([
                 'fixed_asset_id' => $validated['fixed_asset_id'],
-                'office_id' => $validated['office_id'],
+                'office_id'      => $validated['office_id'],
                 'custodian_name' => $validated['custodian_name'],
-                'assignment_date' => $validated['assignment_date'],
-                'is_active' => true,
+                'assignment_date'=> $validated['assignment_date'],
+                'is_active'      => true,
             ]);
 
             DB::commit();
 
-            return response()->json(['message' => 'Asset assigned successfully', 'data' => $assignment], 201);
+            $assignment->load(['fixedAsset.item', 'office']);
+            return response()->json(['message' => 'Activo asignado exitosamente', 'data' => $assignment], 201);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Failed to assign asset', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Error al asignar el activo', 'error' => $e->getMessage()], 500);
         }
     }
 

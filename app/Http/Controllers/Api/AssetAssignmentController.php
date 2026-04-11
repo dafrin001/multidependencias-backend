@@ -78,4 +78,14 @@ class AssetAssignmentController extends Controller
 
         return response()->json(['data' => $assignments]);
     }
+
+    /**
+     * Cancel / delete an assignment
+     */
+    public function destroy($id)
+    {
+        $assignment = Assignment::findOrFail($id);
+        $assignment->delete();
+        return response()->json(['message' => 'Asignación cancelada']);
+    }
 }

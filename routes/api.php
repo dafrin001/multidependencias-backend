@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\OfficeController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OfficialController;
 use App\Http\Controllers\Api\DeliveryController;
+use App\Http\Controllers\Api\ItemController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -21,14 +22,16 @@ Route::apiResource('fixed-assets', FixedAssetController::class);
 Route::apiResource('offices',     OfficeController::class);
 Route::apiResource('categories',  CategoryController::class);
 Route::apiResource('officials',   OfficialController::class);
+Route::apiResource('items',       ItemController::class);
 
 // ── Catálogo e inventario ──────────────────────────────────────────
 Route::get('inventory', [InventoryController::class, 'index']);
 
 // ── Asignaciones de activos ────────────────────────────────────────
-Route::post('assignments/assign',           [AssetAssignmentController::class, 'assign']);
-Route::get('assignments',                   [AssetAssignmentController::class, 'index']);
-Route::get('fixed-assets/{id}/assignments', [AssetAssignmentController::class, 'history']);
+Route::post('assignments/assign',            [AssetAssignmentController::class, 'assign']);
+Route::get('assignments',                    [AssetAssignmentController::class, 'index']);
+Route::get('fixed-assets/{id}/assignments',  [AssetAssignmentController::class, 'history']);
+Route::delete('assignments/{id}',            [AssetAssignmentController::class, 'destroy']);
 
 // ── Actas de entrega (Deliveries) ─────────────────────────────────
 Route::get('deliveries',                    [DeliveryController::class, 'index']);

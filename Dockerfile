@@ -1,46 +1,60 @@
-FROM php:8.2-fpm
+# --- Stage 1: Build Assets (JS/CSS) ---
+FROM node:20 AS asset-builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
 
-# Instalar dependencias del sistema
+# --- Stage 2: Production Environment ---
+FROM php:8.2-apache
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
-    nginx
+    git \
+    curl
 
-# Limpiar cache
+# Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones PHP
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Obtener Composer
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
+
+# Change document root to /public
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configurar directorio de trabajo
-WORKDIR /var/www
+# Set working directory
+WORKDIR /var/www/html
 
-# Copiar el código del proyecto
+# Copy the project files
 COPY . .
 
-# Instalar dependencias de Composer
-RUN composer install --no-dev --optimize-autoloader
+# Copy built assets from stage 1
+COPY --from=asset-builder /app/public/build ./public/build
 
-# Configurar permisos para storage y cache de Laravel
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+# Install PHP dependencies
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Configurar Nginx
-COPY ./docker-config/nginx.conf /etc/nginx/sites-available/default
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Exponer el puerto
+# Expose port 80
 EXPOSE 80
 
-# Script de inicio
-COPY ./docker-config/start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
-
-CMD ["/usr/local/bin/start.sh"]
+# Start Apache
+CMD ["apache2-foreground"]

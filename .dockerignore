@@ -1,0 +1,16 @@
+/node_modules
+/vendor
+.env
+.git
+.gitignore
+Dockerfile
+docker-compose.yml
+/storage/*.key
+/public/storage
+/storage/app/public
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+auth.json

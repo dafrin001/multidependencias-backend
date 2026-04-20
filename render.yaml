@@ -16,19 +16,18 @@ services:
         value: "false"
       - key: APP_URL
         value: "https://drsofts.com"
-      # Base de Datos remota (Aiven u otra externa)
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
-        value: "AQUI_TU_HOST_DE_AIVEN.aivencloud.com" # Cambiar manualmente
+        value: "mysql-2b2a491b-errami167-ff86.d.aivencloud.com" 
       - key: DB_PORT
-        value: "20131" # Cambiar manualmente
+        value: "19962" 
       - key: DB_DATABASE
         value: "defaultdb"
       - key: DB_USERNAME
         value: "avnadmin"
       - key: DB_PASSWORD
-        value: "AQUI_LA_CONTRASENA" # Cambiar manualmente
+        sync: false
       # Limpieza de caché automáticas de Laravel
       - key: BROADCAS_DRIVER
         value: "log"

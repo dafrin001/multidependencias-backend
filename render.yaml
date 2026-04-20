@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: multidependencias-web
+    env: docker
+    region: ohio # Option: oregon, frankfurt, singapore
+    plan: free
+    branch: main
+    envVars:
+      - key: APP_NAME
+        value: "MultiDependencias"
+      - key: APP_ENV
+        value: "production"
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        value: "https://drsofts.com"
+      # Base de Datos remota (Aiven u otra externa)
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        value: "AQUI_TU_HOST_DE_AIVEN.aivencloud.com" # Cambiar manualmente
+      - key: DB_PORT
+        value: "20131" # Cambiar manualmente
+      - key: DB_DATABASE
+        value: "defaultdb"
+      - key: DB_USERNAME
+        value: "avnadmin"
+      - key: DB_PASSWORD
+        value: "AQUI_LA_CONTRASENA" # Cambiar manualmente
+      # Limpieza de caché automáticas de Laravel
+      - key: BROADCAS_DRIVER
+        value: "log"
+      - key: CACHE_DRIVER
+        value: "database"
+      - key: QUEUE_CONNECTION
+        value: "sync"
+      - key: SESSION_DRIVER
+        value: "database"
+      - key: SESSION_LIFETIME
+        value: "120"

@@ -8,6 +8,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/setup-db', function() {
+    \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]);
+    return "Base de datos construida y poblada con exito. Ve a /dashboard";
+});
+
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/almacen', [DashboardController::class, 'almacen'])->name('almacen.index');
 Route::get('/talento-humano', [DashboardController::class, 'hr'])->name('hr.index');

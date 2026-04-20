@@ -21,7 +21,17 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'area_id',
+        'is_admin',
     ];
+
+    /**
+     * Get the area associated with the user.
+     */
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

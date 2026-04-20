@@ -32,7 +32,7 @@ class DeliveryRecord extends Model
         'is_returned'    => 'boolean',
     ];
 
-    // Oculta el Base64 en listados para no saturar la respuesta
+    // signature_data se oculta en listados (es un texto Base64 pesado)
     protected $hidden = ['signature_data'];
 
     // accessor para saber si tiene firma
@@ -43,11 +43,21 @@ class DeliveryRecord extends Model
 
     protected $appends = ['has_signature'];
 
+    // ── Relaciones ─────────────────────────────────────────────────────
+
+    public function deliveryItems()
+    {
+        return $this->hasMany(DeliveryItem::class)
+            ->with(['fixedAsset.item.category', 'item.category']);
+    }
+
+    /** @deprecated usa deliveryItems() en su lugar */
     public function fixedAsset()
     {
         return $this->belongsTo(FixedAsset::class)->withTrashed();
     }
 
+    /** @deprecated usa deliveryItems() en su lugar */
     public function item()
     {
         return $this->belongsTo(Item::class);

@@ -14,9 +14,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            AreaSeeder::class,
             OfficeSeeder::class,
             CategorySeeder::class,
             FullInventorySeeder::class,
+            NewModulesSeeder::class,
+            HrSeeder::class,
         ]);
 
         // Usuario administrador por defecto

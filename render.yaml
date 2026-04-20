@@ -11,9 +11,9 @@ services:
       - key: APP_ENV
         value: "production"
       - key: APP_KEY
-        generateValue: true
+        value: "base64:ycyr55+UuvcrlqXFopyytDAURuxbzy5DUzi/ar1epRw="
       - key: APP_DEBUG
-        value: "false"
+        value: "true"
       - key: APP_URL
         value: "https://drsofts.com"
       - key: DB_CONNECTION

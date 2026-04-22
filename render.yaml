@@ -28,14 +28,18 @@ services:
         value: "avnadmin"
       - key: DB_PASSWORD
         sync: false
-      # Limpieza de caché automáticas de Laravel
-      - key: BROADCAS_DRIVER
+      # SSL requerido por Aiven MySQL
+      - key: MYSQL_ATTR_SSL_CA
+        value: "/etc/ssl/certs/ca-certificates.crt"
+      # Drivers de Laravel
+      - key: BROADCAST_DRIVER
         value: "log"
       - key: CACHE_DRIVER
-        value: "database"
+        value: "file"
       - key: QUEUE_CONNECTION
         value: "sync"
+      # SESSION en 'file' para que la app arranque aunque la DB tarde
       - key: SESSION_DRIVER
-        value: "database"
+        value: "file"
       - key: SESSION_LIFETIME
         value: "120"

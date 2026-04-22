@@ -19,7 +19,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     curl \
-    nginx
+    nginx \
+    dos2unix
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -45,6 +46,9 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev
 # Copy Nginx configuration
 COPY docker-config/nginx.conf /etc/nginx/sites-available/default
 
+# Garantizar que los directorios de storage existan
+RUN mkdir -p storage/framework/{sessions,views,cache/data} storage/logs bootstrap/cache
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
@@ -52,8 +56,8 @@ RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 # Expose port 80
 EXPOSE 80
 
-# Make start script executable
-RUN chmod +x docker-config/start.sh
+# Convertir line endings (Windows -> Unix) y hacer ejecutable
+RUN dos2unix docker-config/start.sh && chmod +x docker-config/start.sh
 
 # Start using the shell script
 CMD ["./docker-config/start.sh"]
